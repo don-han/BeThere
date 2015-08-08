@@ -1,14 +1,16 @@
 package com.donhan.apps.bethere;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
 public class MainActivity extends ActionBarActivity {
@@ -29,13 +31,7 @@ public class MainActivity extends ActionBarActivity {
         mAddButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                CheckInLocation.listAll(CheckInLocation.class).size();
-                CheckInLocation yeah = new CheckInLocation("Yeah "+CheckInLocation.listAll(CheckInLocation.class).size());
-                yeah.save();
-                mAdapter.add(yeah);
-                Log.d(TAG, "button clicked");
-
-                mAdapter.notifyDataSetChanged();
+                createNewCheckInLocation();
             }
         });
 
@@ -46,9 +42,7 @@ public class MainActivity extends ActionBarActivity {
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent intent = new Intent(getBaseContext(), CheckInActivity.class);
-                intent.putExtra("id", mAdapter.getItem(i).getId());
-                startActivity(new Intent(getBaseContext(), CheckInActivity.class));
+                startCheckIn(mAdapter.getItem(i));
             }
         });
 
@@ -72,6 +66,41 @@ public class MainActivity extends ActionBarActivity {
         mAdapter.notifyDataSetChanged();
     }
 
+    private void createNewCheckInLocation(){
+
+        final EditText editName = new EditText(this);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("New Check In Location")
+                .setView(editName)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        CheckInLocation newLoc = addNewCheckInLocation(editName.getText().toString());
+                        startCheckIn(newLoc);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) { }
+                })
+                .show();
+    }
+
+    private CheckInLocation addNewCheckInLocation(String name){
+        CheckInLocation newLoc = new CheckInLocation(name);
+        newLoc.save();
+        mAdapter.add(newLoc);
+        mAdapter.notifyDataSetChanged();
+        return newLoc;
+    }
+
+    private void startCheckIn(CheckInLocation cil){
+        Intent intent = new Intent(this, CheckInActivity.class);
+        intent.putExtra("id", cil.getId());
+        startActivity(intent);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -87,8 +116,10 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (id == R.id.action_cleardb) {
+            CheckInLocation.deleteAll(CheckInLocation.class);
+            mAdapter.clear();
+            mAdapter.notifyDataSetChanged();
         }
 
         return super.onOptionsItemSelected(item);
