@@ -1,5 +1,6 @@
 package com.donhan.apps.bethere;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBarActivity;
@@ -7,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 public class MainActivity extends ActionBarActivity {
@@ -27,7 +29,10 @@ public class MainActivity extends ActionBarActivity {
         mAddButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mAdapter.add("Yeah");
+                CheckInLocation.listAll(CheckInLocation.class).size();
+                CheckInLocation yeah = new CheckInLocation("Yeah "+CheckInLocation.listAll(CheckInLocation.class).size());
+                yeah.save();
+                mAdapter.add(yeah);
                 Log.d(TAG, "button clicked");
 
                 mAdapter.notifyDataSetChanged();
@@ -38,17 +43,39 @@ public class MainActivity extends ActionBarActivity {
         mAdapter = new CheckinListAdapter(this);
         mListView.setAdapter(mAdapter);
 
-        mAdapter.add("Gainz at the Gym");
-        mAdapter.add("Study at the Library");
-        mAdapter.add("Visit Grandma");
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(getBaseContext(), CheckInActivity.class);
+                intent.putExtra("id", mAdapter.getItem(i).getId());
+                startActivity(new Intent(getBaseContext(), CheckInActivity.class));
+            }
+        });
+
+        if(CheckInLocation.listAll(CheckInLocation.class).size() == 0) {
+            new CheckInLocation("Gainz at the Gym").save();
+            new CheckInLocation("Apache Spark with Don").save();
+        }
+
         mAdapter.notifyDataSetChanged();
 
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+
+        mAdapter.clear();
+        for(CheckInLocation loc:CheckInLocation.listAll(CheckInLocation.class)){
+            mAdapter.add(loc);
+        }
+        mAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        //getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 

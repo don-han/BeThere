@@ -1,20 +1,17 @@
 package com.donhan.apps.bethere;
 
-import android.content.Context;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationServices;
 
 public class CheckInActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener{
     GoogleApiClient mGoogleApiClient;
@@ -42,7 +39,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_check_in, menu);
+        //getMenuInflater().inflate(R.menu.menu_check_in, menu);
         return true;
     }
 
@@ -66,8 +63,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         Log.d(TAG, "Connected");
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
-            Log.d(TAG, "last recorded latitude: " + mLastLocation.getLatitude());
-            Log.d(TAG, "last recorded longitude: " + mLastLocation.getLongitude());
+            Log.d(TAG, String.format("last recorded location: %.4f, .4f", mLastLocation.getLatitude(), mLastLocation.getLongitude()));
         }else{
             Log.d(TAG, "No location");
         }

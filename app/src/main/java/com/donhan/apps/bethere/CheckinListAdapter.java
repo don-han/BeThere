@@ -10,7 +10,7 @@ import android.widget.TextView;
 /**
  * Created by Akshay on 8/8/2015.
  */
-public class CheckinListAdapter extends ArrayAdapter<String> {
+public class CheckinListAdapter extends ArrayAdapter<CheckInLocation> {
 
     public CheckinListAdapter(Context context){
         super(context, R.layout.checkin_list_item);
@@ -25,7 +25,7 @@ public class CheckinListAdapter extends ArrayAdapter<String> {
         }
 
         TextView text = (TextView)view.findViewById(R.id.text);
-        text.setText(getItem(position));
+        text.setText(getItem(position).name);
 
         return view;
     }
