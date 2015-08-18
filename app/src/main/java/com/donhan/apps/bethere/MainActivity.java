@@ -47,8 +47,8 @@ public class MainActivity extends ActionBarActivity {
         });
 
         if(CheckInLocation.listAll(CheckInLocation.class).size() == 0) {
-            new CheckInLocation("Gainz at the Gym").save();
-            new CheckInLocation("Apache Spark with Don").save();
+            new CheckInLocation("IBM Gym").save();
+            new CheckInLocation("Mainstacks Library").save();
         }
 
         mAdapter.notifyDataSetChanged();
