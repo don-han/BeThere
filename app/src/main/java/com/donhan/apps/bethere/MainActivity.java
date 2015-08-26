@@ -89,6 +89,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private CheckInLocation addNewCheckInLocation(String name){
+        // TODO: if the location name already existant, then do not add
         CheckInLocation newLoc = new CheckInLocation(name);
         newLoc.save();
         mAdapter.add(newLoc);
