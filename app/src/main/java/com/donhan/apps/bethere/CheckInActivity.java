@@ -248,7 +248,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
                 mCurrentLocation_lon = ll.longitude;
                 new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon).save();
                 Toast.makeText(getApplicationContext(), "Your first check-in is successful!", Toast.LENGTH_LONG).show();
-
+                finish();
 
             }//else if(resultCode == RESULT_CANCELED){            }
         }
