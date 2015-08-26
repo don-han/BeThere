@@ -1,45 +1,90 @@
 package com.donhan.apps.bethere;
 
-import android.database.sqlite.SQLiteException;
+// TDOO: Support mutli-locations
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationServices;
-import com.orm.StringUtil;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 
-public class CheckInActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener{
-    GoogleApiClient mGoogleApiClient;
-    Location mLastLocation;
-    long mCheckInID;
+public class CheckInActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener {
+    private GoogleApiClient mGoogleApiClient;
+    private Location mCurrentLocation;
+    private long mCheckInID;
 
-    private final static String TAG = CheckInActivity.class.getSimpleName();
+    private Button mCheckInButton;
+    private static final String TAG = CheckInActivity.class.getSimpleName();
+    private String mSelectedLocation_name;
+    private double mCurrentLocation_lon;
+    private double mCurrentLocation_lat;
+
+    private static final int PLACE_PICKER_REQUEST = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_check_in);
 
-        // buildGoogleApiClient
-        Log.d(TAG,"Before Google API");
         mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .addApi(LocationServices.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
                 .build();
-        Log.d(TAG,"Google API built");
-        mCheckInID = getIntent().getLongExtra("id", -1);
-        mGoogleApiClient.connect();
 
+        mCheckInID = getIntent().getLongExtra("id", -1);
+
+        mCheckInButton = (Button) findViewById(R.id.gps_check_in_button);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart");
+        mCheckInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mGoogleApiClient.connect();
+            }
+
+        });
+
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+    }
+    @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop");
+        mGoogleApiClient.disconnect();
+        super.onStop();
     }
 
     @Override
@@ -66,78 +111,137 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
 
     @Override
     public void onConnected(Bundle connectionHint) {
-        Log.d(TAG, "Connected");
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mLastLocation != null) {
-            Log.d(TAG, String.format("last recorded location: %.4f, .4f", mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+        Log.d(TAG, "onConnected");
+
+        mSelectedLocation_name = CheckInLocation.findById(CheckInLocation.class, mCheckInID).name;
+
+        Log.d(TAG, "mSelectedLocation_name: " + mSelectedLocation_name);
+        List<CheckInCoordinate> CICoordinates = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", mSelectedLocation_name);
+        if (CICoordinates.size() == 0) { // no coordinate for mSelectedLocation_name
+            AlertDialog dialog = new AlertDialog.Builder(this)
+                    .setTitle("Are you near " + mSelectedLocation_name + "?")
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Log.d(TAG, "User is near selected location");
+                            launchPlacePicker();
+                        }
+                    })
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Log.d(TAG, "User is far away from selected location");
+                            Toast.makeText(getApplicationContext(), "Please check-in near your selected location", Toast.LENGTH_LONG).show();
+                        }
+                    })
+                    .show();
+
+
         }else{
-            Log.d(TAG, "No location");
-            // TODO: wait for a period and retry, or ask them to step outside and retry
-            mLastLocation = new Location("");
-            mLastLocation.setLatitude(42.6394);
-            mLastLocation.setLongitude(-71.3147);
-        }
-        Log.d(TAG, "mCheckInID: " + mCheckInID);
-        Log.d(TAG, "findById: " + CheckInLocation.findById(CheckInLocation.class, mCheckInID));
-        String lastLocation_name = CheckInLocation.findById(CheckInLocation.class, mCheckInID).name;
-        Log.d(TAG, "lastLocation's name: "+lastLocation_name);
-
-        double mLastLocation_lat = mLastLocation.getLatitude();
-        double mLastLocation_lon = mLastLocation.getLongitude();
-
-        List<CheckInCoordinate> CICoordinates = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", lastLocation_name);
-
-        if(CICoordinates.size() == 0){
-            CheckInCoordinate very_first_entry = new CheckInCoordinate(lastLocation_name, mLastLocation_lat, mLastLocation_lon);
-            very_first_entry.save();
-            Log.d(TAG, "There are no entries in the table");
-        }else{
-            CheckInCoordinate firstLocation = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", lastLocation_name).get(0);
-            double firstLocation_lat = firstLocation.lat;
-            double firstLocation_lon = firstLocation.lon;
-            //double firstLocation_lat = 42.5375;
-            //double firstLocation_lon = -71.5125;
-            Log.d(TAG, "first location's name: " + firstLocation.name);
-            float dist[] = new float[1];
-            Location.distanceBetween(mLastLocation_lat, mLastLocation_lon, firstLocation_lat, firstLocation_lon, dist);
-            Log.d(TAG, "DISTANCE IN METERS: " + dist[0]);
-            if(dist[0] < 25) {
-                Log.d(TAG, "We are near the original location");
-                CheckInCoordinate new_location = new CheckInCoordinate(lastLocation_name, mLastLocation_lat, mLastLocation_lon);
-                new_location.save();
-                // TODO: display a checkmark
-            }else{
-                Log.d(TAG, "We are far away from the original location");
-                // TODO: retry, camera option, or display fail
-            }
+            gps_check_in();
         }
 
-
-
-        /*
-
-        Log.d(TAG, "No exception");
-        /*
-            Log.d(TAG, "Exception occured: " + se);
-            // Construct a table
-            CheckInCoordinate first_entry = new CheckInCoordinate(lastLocation, mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            Log.d(TAG, "mlastLocation: "+mLastLocation);
-            first_entry.save();
-            //CheckInCoordinate first_coord = CheckInCoordinate.findById(CheckInCoordinate.class,new Long(1));
-            Log.d(TAG, "location name: "+first_coord.name);
-            Log.d(TAG, "location latitude: "+first_coord.lat);
-            Log.d(TAG, "location longitude: "+first_coord.lon);
-            Log.d(TAG, "location timestamp: "+first_coord.timestamp); */
 
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        Log.d(TAG, "suspended connection");
+        Log.d(TAG, "onConnectionSuspended");
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(TAG,"failed connection");
+        Log.d(TAG, "onConnectionFailed");
+    }
+
+
+
+
+    public void gps_check_in() {
+        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        mCurrentLocation_lon = mCurrentLocation.getLongitude();
+        mCurrentLocation_lat = mCurrentLocation.getLatitude();
+
+        if (mCurrentLocation == null) {
+            Log.d(TAG, "No location");
+            // TODO: before implementing TODO below, read location strategy
+            // TODO1 - options: 1. ask to try again later; 2. wait and retry automatically (finding your location ... ); 3. turn on GPS
+            Toast.makeText(getApplicationContext(), "Sorry. We can't seem to find you. Try again later", Toast.LENGTH_LONG);
+            return;
+        }
+
+        Log.d(TAG, String.format("last recorded location: %.4f, %.4f", mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude()));
+        Log.d(TAG, "mCheckInID: " + mCheckInID);
+        Log.d(TAG, "findById: " + CheckInLocation.findById(CheckInLocation.class, mCheckInID));
+
+        CheckInCoordinate firstLocation = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", mSelectedLocation_name).get(0);
+        double firstLocation_lat = firstLocation.lat;
+        double firstLocation_lon = firstLocation.lon;
+
+        //double firstLocation_lat = 42.5375;
+        //double firstLocation_lon = -71.5125;
+        Log.d(TAG, "first location's name: " + firstLocation.name);
+        float dist[] = new float[1];
+        Location.distanceBetween(mCurrentLocation_lat, mCurrentLocation_lon, firstLocation_lat, firstLocation_lon, dist);
+        Log.d(TAG, "DISTANCE IN METERS: " + dist[0]);
+        if (dist[0] < 100) {
+            Log.d(TAG, "We are near the original location");
+            CheckInCoordinate new_location = new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon);
+            new_location.save();
+
+            // TODO: Animated checkmark
+            Toast.makeText(getApplicationContext(), "Check-in Successful!", Toast.LENGTH_LONG).show();
+
+        } else {
+            Log.d(TAG, "We are far away from the original location");
+            // TODO: before implementing TODO below, read location strategy
+            // TODO1 - options: 1. ask to try again later; 2. wait and retry automatically (finding your location ... ); 3. turn on GPS; 4. add a new location
+            Toast.makeText(getApplicationContext(), "You seem to be far away from the location. Please try again", Toast.LENGTH_LONG).show();
+
+        }
+        finish();
+
+    }
+
+    protected void launchPlacePicker(){
+        PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
+
+        Context context = getApplicationContext();
+
+        try {
+            startActivityForResult(intentBuilder.build(context), PLACE_PICKER_REQUEST);
+            Log.d(TAG, "startActivityForResult successfully ran");
+        } catch (GooglePlayServicesRepairableException e) {
+            e.printStackTrace();
+            Log.d(TAG, "ERROR");
+        } catch (GooglePlayServicesNotAvailableException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Google Play Services is not available.",
+                    Toast.LENGTH_LONG)
+                    .show();
+            Log.d(TAG, "ERROR");
+
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        Log.d(TAG, "onActivityResult");
+        if(requestCode == PLACE_PICKER_REQUEST){
+            if(resultCode == RESULT_OK){
+                Place place = PlacePicker.getPlace(data, this);
+                if(place == null){
+                    Log.d(TAG, "Place is null");
+                }
+                Log.d(TAG, "place: "+ place);
+                LatLng ll = place.getLatLng();
+                // TODO: if Place name is different than the given one, ask to replace the names
+                mCurrentLocation_lat = ll.latitude;
+                mCurrentLocation_lon = ll.longitude;
+                new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon).save();
+
+
+            }//else if(resultCode == RESULT_CANCELED){            }
+        }
     }
 }

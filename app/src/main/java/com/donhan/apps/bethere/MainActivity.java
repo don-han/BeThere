@@ -13,6 +13,7 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
+// TODO: Multiple coordinates for each location (multiple entrance, big physical property)
 public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -69,7 +70,7 @@ public class MainActivity extends ActionBarActivity {
     private void createNewCheckInLocation(){
 
         final EditText editName = new EditText(this);
-
+        // TODO: Ask if a user is near the check-in point; if not, just add the name. If yes, launch PP and store location
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("New Check In Location")
                 .setView(editName)
