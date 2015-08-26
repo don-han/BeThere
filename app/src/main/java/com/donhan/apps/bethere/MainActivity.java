@@ -71,7 +71,7 @@ public class MainActivity extends ActionBarActivity {
 
         final EditText editName = new EditText(this);
         // TODO: Ask if a user is near the check-in point; if not, just add the name. If yes, launch PP and store location
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("New Check In Location")
                 .setView(editName)
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {

@@ -30,18 +30,21 @@ import com.google.android.gms.maps.model.LatLng;
 import java.util.List;
 
 public class CheckInActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener {
+    private static final String TAG = CheckInActivity.class.getSimpleName();
+    private static final int PLACE_PICKER_REQUEST = 1;
+
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
-    private long mCheckInID;
 
     private Button mCheckInButton;
-    private static final String TAG = CheckInActivity.class.getSimpleName();
+    private Button mVisButton;
+
+    private Intent mToVis;
+
+    private long mCheckInID;
     private String mSelectedLocation_name;
     private double mCurrentLocation_lon;
     private double mCurrentLocation_lat;
-
-    private static final int PLACE_PICKER_REQUEST = 1;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,15 +54,18 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Places.GEO_DATA_API)
-                .addApi(Places.PLACE_DETECTION_API)
-                .addApi(LocationServices.API)
+                .addApi(Places.PLACE_DETECTION_API)     // for set-up
+                .addApi(LocationServices.API)           // for check-in
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
 
         mCheckInID = getIntent().getLongExtra("id", -1);
 
-        mCheckInButton = (Button) findViewById(R.id.gps_check_in_button);
+        mCheckInButton = (Button)findViewById(R.id.check_in_button);
+        mVisButton = (Button)findViewById(R.id.vis_button);
+
+        mToVis = new Intent(this, VisualizationActivity.class);
     }
 
     @Override
@@ -71,7 +77,14 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
             public void onClick(View v) {
                 mGoogleApiClient.connect();
             }
+        });
 
+        mVisButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mToVis.putExtra("id", mCheckInID);
+                startActivity(mToVis);
+            }
         });
 
     }
@@ -118,13 +131,14 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         Log.d(TAG, "mSelectedLocation_name: " + mSelectedLocation_name);
         List<CheckInCoordinate> CICoordinates = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", mSelectedLocation_name);
         if (CICoordinates.size() == 0) { // no coordinate for mSelectedLocation_name
-            AlertDialog dialog = new AlertDialog.Builder(this)
+            new AlertDialog.Builder(this)
                     .setTitle("Are you near " + mSelectedLocation_name + "?")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             Log.d(TAG, "User is near selected location");
                             launchPlacePicker();
+                            // onActivityResult stores the entry
                         }
                     })
                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -132,13 +146,14 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
                         public void onClick(DialogInterface dialogInterface, int i) {
                             Log.d(TAG, "User is far away from selected location");
                             Toast.makeText(getApplicationContext(), "Please check-in near your selected location", Toast.LENGTH_LONG).show();
+                            finish();
                         }
                     })
                     .show();
-
+                    Log.d(TAG, "dialog is shown");
 
         }else{
-            gps_check_in();
+            check_in();
         }
 
 
@@ -154,18 +169,16 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         Log.d(TAG, "onConnectionFailed");
     }
 
+    public void check_in() {
+        // TODO: Mayhaps requestLocationUpdate is better? (battery vs. accuracy) -> use getLastLocation and if not works, use update (http://developer.android.com/training/location/receive-location-updates.html)
 
-
-
-    public void gps_check_in() {
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         mCurrentLocation_lon = mCurrentLocation.getLongitude();
         mCurrentLocation_lat = mCurrentLocation.getLatitude();
 
         if (mCurrentLocation == null) {
             Log.d(TAG, "No location");
-            // TODO: before implementing TODO below, read location strategy
-            // TODO1 - options: 1. ask to try again later; 2. wait and retry automatically (finding your location ... ); 3. turn on GPS
+            // options: 1. ask to try again later; 2. wait and requestLocationUpdate (finding your location ... ); 3. turn on GPS or wifi
             Toast.makeText(getApplicationContext(), "Sorry. We can't seem to find you. Try again later", Toast.LENGTH_LONG);
             return;
         }
@@ -178,8 +191,6 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         double firstLocation_lat = firstLocation.lat;
         double firstLocation_lon = firstLocation.lon;
 
-        //double firstLocation_lat = 42.5375;
-        //double firstLocation_lon = -71.5125;
         Log.d(TAG, "first location's name: " + firstLocation.name);
         float dist[] = new float[1];
         Location.distanceBetween(mCurrentLocation_lat, mCurrentLocation_lon, firstLocation_lat, firstLocation_lon, dist);
@@ -191,15 +202,15 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
 
             // TODO: Animated checkmark
             Toast.makeText(getApplicationContext(), "Check-in Successful!", Toast.LENGTH_LONG).show();
-
+            finish();
         } else {
             Log.d(TAG, "We are far away from the original location");
-            // TODO: before implementing TODO below, read location strategy
-            // TODO1 - options: 1. ask to try again later; 2. wait and retry automatically (finding your location ... ); 3. turn on GPS; 4. add a new location
-            Toast.makeText(getApplicationContext(), "You seem to be far away from the location. Please try again", Toast.LENGTH_LONG).show();
 
+            // improvement options: 1. ask to try again later; 2. wait and retry automatically (finding your location ... ); 3. turn on GPS; 4. add a new location
+            Toast.makeText(getApplicationContext(), "You seem to be far away from the location. Please try again", Toast.LENGTH_LONG).show();
+            return;
         }
-        finish();
+
 
     }
 
@@ -230,18 +241,18 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         if(requestCode == PLACE_PICKER_REQUEST){
             if(resultCode == RESULT_OK){
                 Place place = PlacePicker.getPlace(data, this);
-                if(place == null){
-                    Log.d(TAG, "Place is null");
-                }
                 Log.d(TAG, "place: "+ place);
                 LatLng ll = place.getLatLng();
                 // TODO: if Place name is different than the given one, ask to replace the names
                 mCurrentLocation_lat = ll.latitude;
                 mCurrentLocation_lon = ll.longitude;
                 new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon).save();
+                Toast.makeText(getApplicationContext(), "Your first check-in is successful!", Toast.LENGTH_LONG).show();
 
 
             }//else if(resultCode == RESULT_CANCELED){            }
         }
     }
 }
+
+// LOOCK INTO GEOFENCING (http://developer.android.com/training/location/geofencing.html)

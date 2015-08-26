@@ -5,18 +5,18 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class CheckedInActivity extends AppCompatActivity {
+public class VisualizationActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_checked_in);
+        setContentView(R.layout.activity_visualization);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_checked_in, menu);
+        getMenuInflater().inflate(R.menu.menu_visualization, menu);
         return true;
     }
 
