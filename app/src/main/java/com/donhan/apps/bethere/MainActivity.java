@@ -13,6 +13,8 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
+// TODO: Where you can set-up the goal (sync up with calendar)
+
 // TODO: Multiple coordinates for each location (multiple entrance, big physical property)
 public class MainActivity extends ActionBarActivity {
 
@@ -127,3 +129,4 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 }
+

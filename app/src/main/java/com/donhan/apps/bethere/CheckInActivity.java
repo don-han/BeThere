@@ -132,7 +132,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         List<CheckInCoordinate> CICoordinates = CheckInCoordinate.find(CheckInCoordinate.class, "name=?", mSelectedLocation_name);
         if (CICoordinates.size() == 0) { // no coordinate for mSelectedLocation_name
             new AlertDialog.Builder(this)
-                    .setTitle("Are you near " + mSelectedLocation_name + "?")
+                    .setTitle("Are you at " + mSelectedLocation_name + "?")
                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
