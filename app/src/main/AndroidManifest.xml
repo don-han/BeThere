@@ -19,7 +19,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".CheckInActivity"
             android:label="@string/title_activity_check_in" >
@@ -28,7 +27,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.donhan.apps.bethere.MainActivity" />
         </activity>
-
         <activity
             android:name=".VisualizationActivity"
             android:label="@string/title_activity_visualization"
@@ -54,6 +52,14 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyD1B1ThzRm8jrWEgcrLBgCM1e7TdSk2y88" />
 
+        <activity
+            android:name=".SocialMediaActivity"
+            android:label="@string/title_activity_social_media" >
+        </activity>
+        <activity
+            android:name=".CheckedInActivity"
+            android:label="@string/title_activity_checked_in" >
+        </activity>
     </application>
 
 </manifest>

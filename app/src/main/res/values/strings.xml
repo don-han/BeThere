@@ -3,10 +3,13 @@
     <string name="title_activity_check_in">Check In</string>
     <string name="title_activity_visualization">Visualization</string>
 
-    <string name="checked_in">You are checked-in!</string>
     <string name="action_settings">Settings</string>
     <string name="action_clear">Clear DB</string>
 
     <string name="check_in_button">Check-in</string>
     <string name="visualize_button">Visualize</string>
+    <string name="title_activity_social_media">SocialMediaActivity</string>
+
+    <string name="checked_in_message">You are checked-in!</string>
+    <string name="title_activity_checked_in">CheckedInActivity</string>
 </resources>

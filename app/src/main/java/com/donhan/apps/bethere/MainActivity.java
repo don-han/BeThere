@@ -16,6 +16,8 @@ import android.widget.ListView;
 // TODO: Where you can set-up the goal (sync up with calendar)
 
 // TODO: Multiple coordinates for each location (multiple entrance, big physical property)
+// TODO: Social media connection
+// TODO: compete with friends (check if same location via PP)
 public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();

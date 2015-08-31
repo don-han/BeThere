@@ -45,6 +45,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
     private String mSelectedLocation_name;
     private double mCurrentLocation_lon;
     private double mCurrentLocation_lat;
+    ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,14 +65,8 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
 
         mCheckInButton = (Button)findViewById(R.id.check_in_button);
         mVisButton = (Button)findViewById(R.id.vis_button);
-
         mToVis = new Intent(this, VisualizationActivity.class);
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.d(TAG, "onStart");
         mCheckInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -86,13 +81,18 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
                 startActivity(mToVis);
             }
         });
-
     }
 
     @Override
-    protected void onPause(){
-        super.onPause();
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "onStart");
+
+
+
+
     }
+
     @Override
     protected void onStop() {
         Log.d(TAG, "onStop");
@@ -169,7 +169,7 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         Log.d(TAG, "onConnectionFailed");
     }
 
-    public void check_in() {
+    protected void check_in() {
         // TODO: Mayhaps requestLocationUpdate is better? (battery vs. accuracy) -> use getLastLocation and if not works, use update (http://developer.android.com/training/location/receive-location-updates.html)
 
         mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
@@ -200,9 +200,11 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
             CheckInCoordinate new_location = new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon);
             new_location.save();
 
-            // TODO: Animated checkmark
-            Toast.makeText(getApplicationContext(), "Check-in Successful!", Toast.LENGTH_LONG).show();
-            finish();
+            // TODO: Animated big checkmark
+            //Toast.makeText(getApplicationContext(), "Check-in Successful!", Toast.LENGTH_LONG).show();
+            //finish();
+            toCheckedInActivity();
+
         } else {
             Log.d(TAG, "We are far away from the original location");
 
@@ -212,6 +214,13 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
         }
 
 
+    }
+    protected void toCheckedInActivity(){
+        Intent toCheckedIn = new Intent(this, CheckedInActivity.class);
+        toCheckedIn.putExtra("name",mSelectedLocation_name);
+        toCheckedIn.putExtra("lat",mCurrentLocation_lat);
+        toCheckedIn.putExtra("lon",mCurrentLocation_lon);
+        startActivity(toCheckedIn);
     }
 
     protected void launchPlacePicker(){
@@ -248,7 +257,8 @@ public class CheckInActivity extends AppCompatActivity implements ConnectionCall
                 mCurrentLocation_lon = ll.longitude;
                 new CheckInCoordinate(mSelectedLocation_name, mCurrentLocation_lat, mCurrentLocation_lon).save();
                 Toast.makeText(getApplicationContext(), "Your first check-in is successful!", Toast.LENGTH_LONG).show();
-                finish();
+                //finish();
+                toCheckedInActivity();
 
             }//else if(resultCode == RESULT_CANCELED){            }
         }
